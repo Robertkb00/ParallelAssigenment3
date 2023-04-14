@@ -27,6 +27,7 @@ private:
     
 public:
     LinkedList() : listHead(nullptr), listTail(nullptr), listSize(0){};
+    
     ~LinkedList();
 
     void insert(int data);

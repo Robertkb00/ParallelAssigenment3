@@ -6,7 +6,7 @@
 
 LinkedList::~LinkedList()
 {
-    Node* temp;
+    Node* temp = new Node(0);
 
     while (listHead != nullptr)
     {
