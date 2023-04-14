@@ -143,6 +143,8 @@ void presents()
     std::cout << "Finished in " << duration.count() << "ms" << std::endl;
 }
 
+//Section 2: Temperatures
+
 bool sensorsCheck(int caller, std::vector<bool>& sensors)
 {
     for (int i = 0; i < static_cast<int>(sensors.size()); i++)
@@ -153,23 +155,20 @@ bool sensorsCheck(int caller, std::vector<bool>& sensors)
     return true;
 }
 
-void printLargestDifference(std::vector<int>& sensorReadings)
+void printLargestDifference(std::vector<int>& readings)
 {
     int step = 10;
     int startInterval = 0;
     int maxDifference = INT_MIN;
 
-    // Because the sensor readings are all stored in one contiguous array,
-    // we need to loop through the array in chunks to find the largest
-    // difference for that sensor
     for (int threadIndex = 0; threadIndex < TEMP_THREADS; threadIndex++)
     {
         int offset = threadIndex * 60;
 
         for (int i = offset; i < 60 - step + 1; i++)
         {
-            int max = *std::max_element(sensorReadings.begin() + i, sensorReadings.begin() + i + step);
-            int min = *std::min_element(sensorReadings.begin() + i, sensorReadings.begin() + i + step);
+            int max = *std::max_element(readings.begin() + i, readings.begin() + i + step);
+            int min = *std::min_element(readings.begin() + i, readings.begin() + i + step);
             int diff = max - min;
 
             if (diff > maxDifference)
@@ -185,11 +184,11 @@ void printLargestDifference(std::vector<int>& sensorReadings)
               << " and ending at minute " << (startInterval + 10) << std::endl;
 }
 
-void printHighestTemperatures(std::vector<int>& sensorReadings)
+void printHighestTemperatures(std::vector<int>& readings)
 {
     std::set<int> temperatures{};
 
-    for (auto it = sensorReadings.rbegin(); it != sensorReadings.rend(); it++)
+    for (auto it = readings.rbegin(); it != readings.rend(); it++)
     {
         if (temperatures.find(*it) == temperatures.end())
             temperatures.insert(*it);
@@ -206,10 +205,10 @@ void printHighestTemperatures(std::vector<int>& sensorReadings)
     std::cout << std::endl;
 }
 
-void printLowestTemperatures(std::vector<int>& sensorReadings) {
+void printLowestTemperatures(std::vector<int>& readings) {
     std::set<int> temperatures{};
 
-    for (auto it = sensorReadings.begin(); it != sensorReadings.end(); it++) {
+    for (auto it = readings.begin(); it != readings.end(); it++) {
         if (temperatures.find(*it) == temperatures.end()) {
             temperatures.insert(*it);
         }
@@ -228,32 +227,32 @@ void printLowestTemperatures(std::vector<int>& sensorReadings) {
     std::cout << std::endl;
 }
 
-void generateReport(int hour, std::vector<int>& sensorReadings)
+void generateReport(int hour, std::vector<int>& readings)
 {
     std::cout << "[Hour " << hour + 1 << " report]" << std::endl;
 
-    printLargestDifference(sensorReadings);
+    printLargestDifference(readings);
 
-    std::sort(sensorReadings.begin(), sensorReadings.end());
+    std::sort(readings.begin(), readings.end());
 
-    printHighestTemperatures(sensorReadings);
-    printLowestTemperatures(sensorReadings);
+    printHighestTemperatures(readings);
+    printLowestTemperatures(readings);
 
     std::cout << std::endl
               << std::endl;
 }
 
-void measureTemperature(int threadId, std::vector<int>& sensorReadings, std::vector<bool>& sensorsReady)
+void measureTemperature(int threadId, std::vector<int>& readings, std::vector<bool>& sensorsReady)
 {
     for (int hour = 0; hour < 72; hour++)
     {
         for (int minute = 0; minute < 60; minute++)
         {
             sensorsReady[threadId] = false;
-            sensorReadings[minute + (threadId * 60)] = generateNumber(-100, 70);
+            readings[minute + (threadId * 60)] = generateNumber(-100, 70);
             sensorsReady[threadId] = true;
 
-            // Make sure we wait for all sensors to take a reading before we continue
+            // Wait for all sensors to take a reading before we continue
             // with another temperature reading
             while (!sensorsCheck(threadId, sensorsReady))
             {
@@ -264,7 +263,7 @@ void measureTemperature(int threadId, std::vector<int>& sensorReadings, std::vec
         if (threadId == 0)
         {
             mutex.lock();
-            generateReport(hour, sensorReadings);
+            generateReport(hour, readings);
             mutex.unlock();
         }
     }
@@ -295,8 +294,8 @@ void temperatures()
 
 int main()
 {
-//   std::cout << "Testing Presents";
-//   presents();  
+  std::cout << "Testing Presents";
+  presents();  
   std::cout << "Testing Temperature";
   temperatures();
 
