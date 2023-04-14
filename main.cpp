@@ -270,7 +270,7 @@ void measureTemperature(int threadId, std::vector<int>& sensorReadings, std::vec
     }
 }
 
-int temperatures()
+void temperatures()
 {
     // Keeps track of every reading by the threads. Each thread can only access
     // 60 readings. For example, thread 1 writes to 0 - 59, thread 2 writes to
