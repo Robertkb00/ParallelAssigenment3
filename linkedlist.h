@@ -36,5 +36,5 @@ public:
     std::size_t size();
     bool empty();
 
-    friend std::ostream& operator<<(std::ostream& os, std::unique_ptr<ConcurrentLinkedList> const& list);
+    //friend std::ostream& operator<<(std::ostream& os, std::unique_ptr<ConcurrentLinkedList> const& list);
 }
