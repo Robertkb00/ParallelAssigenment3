@@ -125,3 +125,9 @@ int presents()
 
     std::cout << "Finished in " << duration.count() << "ms" << std::endl;
 }
+
+int main()
+{
+  std::cout << "Testing";
+  presents();  
+}
