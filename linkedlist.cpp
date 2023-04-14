@@ -8,34 +8,34 @@ LinkedList::~LinkedList()
 {
     Node* temp;
 
-    while (nodeHead != nullptr)
+    while (listHead != nullptr)
     {
-        temp = nodeHead;
-        nodeHead = nodeHead->next;
+        temp = listHead;
+        listHead = listHead->next;
         delete temp;
     }
 }
 
 void LinkedList::insert(int data)
 {
-    nodeMutex.lock();
+    listMutex.lock();
 
     Node* newNode = new Node(data);
 
-    if (nodeHead == nullptr)
+    if (listHead == nullptr)
     {
-        nodeHead = newNode;
-        nodeTail = newNode;
+        listHead = newNode;
+        listTail = newNode;
     }
-    else if (nodeHead->data >= newNode->data)
+    else if (listHead->data >= newNode->data)
     {
-        newNode->next = nodeHead;
-        newNode->next->prev = newNode;
-        nodeHead = newNode;
+        newNode->next = listHead;
+        newNode->next->previous = newNode;
+        listHead = newNode;
     }
     else
     {
-        Node* curr = m_head;
+        Node* curr = listHead;
 
         while (curr->next != nullptr && curr->next->data < newNode->data)
         {
@@ -45,128 +45,128 @@ void LinkedList::insert(int data)
         newNode->next = curr->next;
 
         if (curr->next != nullptr) {
-            newNode->next->prev = newNode;
+            newNode->next->previous = newNode;
         }
 
         curr->next = newNode;
-        newNode->prev = curr;
+        newNode->previous = curr;
 
         // In this case, we've reached the end of the list so
         // we need to update the tail node
         if (newNode->next == nullptr) {
-            nodeTail = newNode;
+            listTail = newNode;
         }
     }
 
-    nodeSize++;
-    nodeMutex.unlock();
+    listSize++;
+    listMutex.unlock();
 }
 
 void LinkedList::remove(int key)
 {
-    if (m_head == nullptr)
+    if (listHead == nullptr)
     {
         return;
     }
   
-    Node* current = nodeHead;
-    nodeMutex.lock();
+    Node* current = listHead;
+    listMutex.lock();
   
-    if (currnet->data == key)
+    if (current->data == key)
     {
-        Node* temp = nodeHead;
-        nodeHead = nodeHead->next;
+        Node* temp = listHead;
+        listHead = listHead->next;
 
         delete temp;
 
-        if (nodeHead != nullptr) {
-            nodeHead->previous = nullptr;
+        if (listHead != nullptr) {
+            listHead->previous = nullptr;
         }
 
-        nodeSize--;
+        listSize--;
     }
     else
     {
-        while (curr->next != nullptr)
+        while (current->next != nullptr)
         {
-            if (curr->next->data == key)
+            if (current->next->data == key)
             {
-                Node* temp = curr->next;
-                curr->next = curr->next->next;
+                Node* temp = current->next;
+                current->next = current->next->next;
 
-                if (curr->next != nullptr)
+                if (current->next != nullptr)
                 {
-                    curr->next->prev = curr;
+                    current->next->previous = current;
                 }
 
                 delete temp;
-                nodeSize--;
+                listSize--;
                 break;
             }
-            curr = curr->next;
+            current = current->next;
         }
     }
-    nodeMutex.unlock();
+    listMutex.unlock();
 }
 
-bool ConcurrentLinkedList::contains(int key)
+bool LinkedList::contains(int key)
 {
-    nodeMutex.lock();
+    listMutex.lock();
 
-    if (nodeHead == nullptr)
+    if (listHead == nullptr)
     {
-        nodeMutex.unlock();
+        listMutex.unlock();
         return false;
     }
 
-    Node* temp = nodeHead;
+    Node* temp = listHead;
 
     while (temp != nullptr)
     {
         if (temp->data == key)
         {
-            nodeMutex.unlock();
+            listMutex.unlock();
             return true;
         }
 
         temp = temp->next;
     }
 
-    nodeMutex.unlock();
+    listMutex.unlock();
     return false;
 }
 
 
 int LinkedList::removeHead()
 {
-    nodeMutex.lock();
+    listMutex.lock();
 
-    if (nodeHead == nullptr)
+    if (listHead == nullptr)
     {
-        nodeMutex.unlock();
+        listMutex.unlock();
         return INT_MIN;
     }
 
-    int value = nodeHead->data;
-    Node* temp = nodeHead;
+    int value = listHead->data;
+    Node* temp = listHead;
 
-    nodeHead = nodeHead->next;
+    listHead = listHead->next;
 
     delete temp;
 
-    if (nodeHead != nullptr)
+    if (listHead != nullptr)
     {
-        nodeHead->prev = nullptr;
+        listHead->previous = nullptr;
     }
 
-    nodeSize--;
-    nodeMutex.unlock();
+    listSize--;
+    listMutex.unlock();
     return value;
 }
 
 std::size_t LinkedList::size()
 {
-    return listtSize;
+    return listSize;
 }
 
 bool LinkedList::empty()
