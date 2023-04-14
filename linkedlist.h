@@ -30,12 +30,12 @@ public:
     
     ~LinkedList();
 
-    void insert(int data);
-    void remove(int key);
-    bool contains(int data);
-    int removeHead();
+    void LinkedList::insert(int data);
+    void LinkedList::remove(int key);
+    bool LinkedList::contains(int data);
+    int LinkedList::removeHead();
     std::size_t size();
-    bool empty();
+    bool LinkedList::empty();
 
     friend std::ostream& operator<<(std::ostream& os, std::unique_ptr<LinkedList> const& list);
 };
