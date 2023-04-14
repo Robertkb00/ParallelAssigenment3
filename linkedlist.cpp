@@ -171,6 +171,9 @@ std::size_t LinkedList::size()
 
 bool LinkedList::empty()
 {
-    return listHead == nullptr;
+    if(listHead == nullptr)
+        return true;
+    else
+        return false;
 }
 
