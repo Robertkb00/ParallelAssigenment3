@@ -112,7 +112,7 @@ void tasks(LinkedList* list, std::unordered_set<int>* giftBag, std::unordered_se
     }
 }
 
-int presents()
+void presents()
 {
     std::unique_ptr<LinkedList> list = std::make_unique<LinkedList>();
     std::unique_ptr<std::unordered_set<int>> cards = std::make_unique<std::unordered_set<int>>();
