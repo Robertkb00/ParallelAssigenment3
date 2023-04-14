@@ -6,10 +6,12 @@
 #include <chrono>
 #include <unordered_set>
 #include <random>
+#include <set>
 
 
 
-#define THREADS 4
+#define PRESENT_THREADS 4
+#define TEMP_THREADS 8
 #define GUESTS 500000
 
 std::mutex mutex;
@@ -116,18 +118,18 @@ void presents()
 {
     std::unique_ptr<LinkedList> list = std::make_unique<LinkedList>();
     std::unique_ptr<std::unordered_set<int>> cards = std::make_unique<std::unordered_set<int>>();
-    std::thread threads[THREADS] = {};
+    std::thread threads[PRESENT_THREADS] = {};
 
     std::cout << "Generating " << GUESTS << " gifts..." << std::endl;
 
     std::unique_ptr<std::unordered_set<int>> giftBag = generateUnorderedSet(GUESTS);
 
-    for (int i = 0; i < THREADS; i++) 
+    for (int i = 0; i < PRESENT_THREADS; i++) 
     {
         threads[i] = std::thread(tasks, list.get(), giftBag.get(), cards.get());
     }
 
-    std::cout << "Running " << THREADS << " threads..." << std::endl;
+    std::cout << "Running " << PRESENT_THREADS << " threads..." << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
 
     for (std::thread& thread : threads)
@@ -141,8 +143,162 @@ void presents()
     std::cout << "Finished in " << duration.count() << "ms" << std::endl;
 }
 
+bool sensorsCheck(int caller, std::vector<bool>& sensors)
+{
+    for (int i = 0; i < static_cast<int>(sensors.size()); i++)
+    {
+        if (!sensors[i] && caller != i)
+            return false;
+    }
+    return true;
+}
+
+void printLargestDifference(std::vector<int>& sensorReadings)
+{
+    int step = 10;
+    int startInterval = 0;
+    int maxDifference = INT_MIN;
+
+    // Because the sensor readings are all stored in one contiguous array,
+    // we need to loop through the array in chunks to find the largest
+    // difference for that sensor
+    for (int threadIndex = 0; threadIndex < TEMP_THREADS; threadIndex++)
+    {
+        int offset = threadIndex * 60;
+
+        for (int i = offset; i < 60 - step + 1; i++)
+        {
+            int max = *std::max_element(sensorReadings.begin() + i, sensorReadings.begin() + i + step);
+            int min = *std::min_element(sensorReadings.begin() + i, sensorReadings.begin() + i + step);
+            int diff = max - min;
+
+            if (diff > maxDifference)
+            {
+                maxDifference = diff;
+                startInterval = i;
+            }
+        }
+    }
+
+    std::cout << "Largest temperature difference: " << maxDifference << "F"
+              << " starting at minute " << startInterval
+              << " and ending at minute " << (startInterval + 10) << std::endl;
+}
+
+void printHighestTemperatures(std::vector<int>& sensorReadings)
+{
+    std::set<int> temperatures{};
+
+    for (auto it = sensorReadings.rbegin(); it != sensorReadings.rend(); it++)
+    {
+        if (temperatures.find(*it) == temperatures.end())
+            temperatures.insert(*it);
+
+        if (temperatures.size() == 5)
+            break;
+    }
+
+    std::cout << "Highest temperatures: ";
+
+    for (int temperature : temperatures)
+        std::cout << temperature << "F ";
+
+    std::cout << std::endl;
+}
+
+void printLowestTemperatures(std::vector<int>& sensorReadings) {
+    std::set<int> temperatures{};
+
+    for (auto it = sensorReadings.begin(); it != sensorReadings.end(); it++) {
+        if (temperatures.find(*it) == temperatures.end()) {
+            temperatures.insert(*it);
+        }
+
+        if (temperatures.size() == 5) {
+            break;
+        }
+    }
+
+    std::cout << "Lowest temperatures: ";
+
+    for (int temperature : temperatures) {
+        std::cout << temperature << "F ";
+    }
+
+    std::cout << std::endl;
+}
+
+void generateReport(int hour, std::vector<int>& sensorReadings)
+{
+    std::cout << "[Hour " << hour + 1 << " report]" << std::endl;
+
+    printLargestDifference(sensorReadings);
+
+    std::sort(sensorReadings.begin(), sensorReadings.end());
+
+    printHighestTemperatures(sensorReadings);
+    printLowestTemperatures(sensorReadings);
+
+    std::cout << std::endl
+              << std::endl;
+}
+
+void measureTemperature(int threadId, std::vector<int>& sensorReadings, std::vector<bool>& sensorsReady)
+{
+    for (int hour = 0; hour < 72; hour++)
+    {
+        for (int minute = 0; minute < 60; minute++)
+        {
+            sensorsReady[threadId] = false;
+            sensorReadings[minute + (threadId * 60)] = generateNumber(-100, 70);
+            sensorsReady[threadId] = true;
+
+            // Make sure we wait for all sensors to take a reading before we continue
+            // with another temperature reading
+            while (!sensorsCheck(threadId, sensorsReady))
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            }
+        }
+
+        if (threadId == 0)
+        {
+            mutex.lock();
+            generateReport(hour, sensorReadings);
+            mutex.unlock();
+        }
+    }
+}
+
+int temperatures()
+{
+    // Keeps track of every reading by the threads. Each thread can only access
+    // 60 readings. For example, thread 1 writes to 0 - 59, thread 2 writes to
+    // 60 - 119, and so on
+    std::vector<int> sensorReadings(TEMP_THREADS * 60);
+    std::vector<bool> sensorsReady(TEMP_THREADS);
+    std::thread threads[TEMP_THREADS] = {};
+
+    for (int i = 0; i < TEMP_THREADS; i++)
+        threads[i] = std::thread(measureTemperature, i, std::ref(sensorReadings), std::ref(sensorsReady));
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    for (std::thread& thread : threads)
+        thread.join();
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration<double, std::milli>(end - start);
+
+    std::cout << "Finished in " << duration.count() << "ms" << std::endl;
+}
+
 int main()
 {
-  std::cout << "Testing";
-  presents();  
+//   std::cout << "Testing Presents";
+//   presents();  
+  std::cout << "Testing Temperature";
+  temperatures();
+
+
 }
