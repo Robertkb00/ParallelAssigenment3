@@ -37,4 +37,4 @@ public:
     bool empty();
 
     //friend std::ostream& operator<<(std::ostream& os, std::unique_ptr<ConcurrentLinkedList> const& list);
-}
+};
